@@ -169,11 +169,6 @@ def show_venue(venue_id):
 #  Create Venue
 #  ----------------------------------------------------------------
 
-#@app.route('/venues/create', methods=['GET'])
-#def create_venue_form():
-#  form = VenueForm()
-#  return render_template('forms/new_venue.html', form=form)
-
 
 @app.route('/venues/create', methods=['GET'])
 def create_venue_form():
@@ -186,7 +181,7 @@ def create_venue_submission():
  # TODO: insert form data as a new Venue record in the db, instead
   # TODO: modify data to be the data object returned from db insertion
     form = VenueForm(request.form, meta={'csrf': False})
-    if form.venue_validate():
+    if form.validate():
         try:
             venue_name = form.name.data
             venue_city = form.city.data
