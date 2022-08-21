@@ -4,6 +4,7 @@
 import json
 import dateutil.parser
 import babel
+import datetime
 from flask import Flask, render_template, request, Response, flash, redirect, url_for, abort
 from flask_moment import Moment
 from models import *
@@ -22,9 +23,6 @@ from sqlalchemy import func
 
 # App Config.
 #----------------------------------------------------------------------------#
-app = Flask(__name__)
-db = SQLAlchemy(app)
-db.init_app(app)
 migrate = Migrate(app, db)
 moment = Moment(app)
 app.config.from_object('config')
@@ -92,7 +90,7 @@ def search_venues():
     research_input = request.form.get('search_term', '')
     search_venue = db.session.query(Venue).filter(Venue.name.ilike(
         '%{}%'.format(research_input))).all()
-    now_time = datetime.datetime.today()
+    now_time = datetime.now()
     data = []
     for i in search_venue:
         coming_shows = []
@@ -116,7 +114,7 @@ def search_venues():
 def show_venue(venue_id):
   # shows the venue page with the given venue_id
   # TODO: replace with real venue data from the venues table, using venue_id
-    now_time = datetime.datetime.now()
+    now_time = datetime.now()
     venue_info = db.session.query(Venue).filter(
         Venue.id == venue_id).one_or_none()
     shows = db.session.query(
@@ -157,7 +155,7 @@ def show_venue(venue_id):
         'website': venue_info.website_link,
         'facebook_link': venue_info.facebook_link,
         'seeking_talent': venue_info.seeking_talent,
-        'seeking_description': venue_info.seeking_talent_description,
+        'seeking_description': venue_info.seeking_description,
         'image_link': venue_info.image_link,
         'past_shows': show_past_data,
         'past_shows_count': len(show_past_data),
@@ -182,6 +180,7 @@ def create_venue_submission():
   # TODO: modify data to be the data object returned from db insertion
     form = VenueForm(request.form, meta={'csrf': False})
     if form.validate():
+        print(form.validate())    
         try:
             venue_name = form.name.data
             venue_city = form.city.data
@@ -205,7 +204,7 @@ def create_venue_submission():
                 image_link=venue_image_link,
                 website_link=venue_website_link,
                 seeking_talent=venue_seeking_talent,
-                seeking_talent_description=venue_talent_description)
+                seeking_description=venue_talent_description)
             db.session.add(venue_details)
             db.session.commit()
  # on successful db insert, flash success
@@ -213,6 +212,7 @@ def create_venue_submission():
         except BaseException:
             db.session.rollback()
             logging.error("Error occurred ")
+            print(sys.exc_info())
         finally:
             db.session.close()
     else:
@@ -269,7 +269,7 @@ def search_artists():
     research_input = request.form.get('search_term', '')
     search_artist = db.session.query(Artist).filter(
         Artist.name.ilike('%{}%'.format(research_input))).all()
-    now_time = datetime.datetime.today()
+    now_time = datetime.now()
     data = []
     for i in search_artist:
         coming_shows = []
@@ -296,7 +296,7 @@ def search_artists():
 def show_artist(artist_id):
   # shows the artist page with the given artist_id
   # TODO: replace with real artist data from the artist table, using artist_id 
-    now_time = datetime.datetime.now()
+    now_time = datetime.now()
     try:
         artist_info = Artist.query.filter(Artist.id == artist_id).one_or_none()
         shows = db.session.query(
@@ -309,10 +309,10 @@ def show_artist(artist_id):
         show_past_data = []
         show_data = []
         for i in shows:
-            print(str(i.Show.start_time))
+            print(str(i.start_time))
             show_coming_venue = {}
             show_past_venue = {}
-            if i.Show.start_time > now_time:
+            if i.start_time > now_time:
                 show_coming_venue['venue_id'] = i.Venue.id
                 show_coming_venue['venue_name'] = i.Venue.name
                 show_coming_venue['venue_image_link'] = i.Venue.image_link
@@ -404,7 +404,7 @@ def edit_venue_submission(venue_id):
   # venue record with ID <venue_id> using the new attributes
     venue = Venue.query.first_or_404(venue_id)
     form = VenueForm(request.form, meta={'csrf': False})
-    if form.venue_validate():
+    if form.validate():
         try:
             venue.name = form.name.data
             venue.city = form.city.data
@@ -416,7 +416,7 @@ def edit_venue_submission(venue_id):
             venue.facebook_link = form.facebook_link.data
             venue.website_link = form.website_link.data
             venue.seeking_talent = form.seeking_talent.data
-            venue.talent_description = form.seeking_description.data
+            venue.description = form.seeking_description.data
             db.session.commit()
             flash('Venue ' + form.name.data + ' was successfully listed!')
         except BaseException:
@@ -446,7 +446,7 @@ def create_artist_submission():
   # TODO: insert form data as a new Venue record in the db, instead
   # TODO: modify data to be the data object returned from db insertion
     form = ArtistForm(request.form, meta={'csrf': False})
-    if form.artist_validate():
+    if form.validate():
         try:
             artist_name = form.name.data
             artist_city = form.city.data
@@ -468,7 +468,7 @@ def create_artist_submission():
                 image_link=artist_image_link,
                 website_link=artist_website_link,
                 seeking_venue=artist_seeking_venue,
-                seeking_venue_description=artist_seeking_description)
+                seeking_description=artist_seeking_description)
             db.session.add(data)
             db.session.commit()
   # on successful db insert, flash success
